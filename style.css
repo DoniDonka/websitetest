@@ -27,6 +27,20 @@ body {
   text-decoration: none;
   display: block;
   margin: 10px 0;
+  transition: color 0.2s ease;
+}
+
+.sidebar ul li a:hover {
+  color: #1abc9c;
+}
+
+button#toggle-theme {
+  margin-top: 20px;
+  background: #1abc9c;
+  border: none;
+  padding: 10px;
+  color: white;
+  cursor: pointer;
 }
 
 .main {
@@ -38,11 +52,10 @@ body {
   background: #3498db;
   padding: 10px;
   color: white;
+  font-weight: bold;
 }
 
-.cards {
-  display: flex;
-  gap: 20px;
+#content-area {
   margin-top: 20px;
 }
 
@@ -50,10 +63,12 @@ body {
   background: white;
   padding: 20px;
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  flex: 1;
+  margin-bottom: 15px;
+  border-radius: 8px;
   text-align: center;
 }
 
+/* Dark mode styles */
 .dark-mode body {
   background-color: #1c1c1c;
 }
@@ -65,4 +80,16 @@ body {
 
 .dark-mode .topbar {
   background-color: #444;
+}
+
+.dark-mode .sidebar {
+  background-color: #111;
+}
+
+.dark-mode .sidebar ul li a {
+  color: #ccc;
+}
+
+.dark-mode button#toggle-theme {
+  background: #555;
 }

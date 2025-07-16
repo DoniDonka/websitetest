@@ -2,10 +2,31 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>My First Website</title>
+  <title>Admin Panel</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Welcome to My Website!</h1>
-  <p>This is a paragraph of text.</p>
+  <div class="sidebar">
+    <h2>Dashboard</h2>
+    <ul>
+      <li><a href="#">Overview</a></li>
+      <li><a href="#">Users</a></li>
+      <li><a href="#">Settings</a></li>
+    </ul>
+    <button id="toggle-theme">Toggle Theme</button>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <p>Welcome, Admin</p>
+    </div>
+    <div class="cards">
+      <div class="card">Users: 120</div>
+      <div class="card">New Orders: 35</div>
+      <div class="card">Revenue: $4.2K</div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>

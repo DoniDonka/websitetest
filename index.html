@@ -2,11 +2,23 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Admin Panel</title>
+  <title>Game Admin Panel</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="sidebar">
+  <div id="login-screen">
+    <div class="login-card">
+      <h2>Login</h2>
+      <input type="text" id="username" placeholder="Username">
+      <input type="password" id="password" placeholder="Password">
+      <button onclick="authenticateUser(
+        document.getElementById('username').value,
+        document.getElementById('password').value
+      )">Log In</button>
+    </div>
+  </div>
+
+  <div class="sidebar" style="display:none;">
     <h2>Dashboard</h2>
     <ul>
       <li><a href="#">Overview</a></li>
@@ -16,12 +28,12 @@
     <button id="toggle-theme">Toggle Theme</button>
   </div>
 
-  <div class="main">
+  <div class="main" style="display:none;">
     <div class="topbar">
-      <p>Welcome, Admin</p>
+      <p id="welcome-text">Welcome</p>
     </div>
     <div id="content-area">
-      <div class="card">Welcome to the dashboard. Select a section from the sidebar.</div>
+      <div class="card">Please log in to access the dashboard.</div>
     </div>
   </div>
 

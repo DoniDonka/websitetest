@@ -1,9 +1,3 @@
-// ✅ Whitelisted Discord IDs
-const allowedIDs = [
-  "329997541523587073",
-  "1287198545539104780"
-];
-
 // ✅ Backend API base
 const API_BASE = 'https://ckrp-backend.onrender.com';
 
@@ -51,17 +45,43 @@ async function loadVehicles() {
   }
 }
 
-// ✅ Form visibility logic
-if (discordID && allowedIDs.includes(discordID)) {
-  addedByInput.value = discordID;
-  form.style.display = 'block';
-} else {
-  form.style.display = 'none';
-  const msg = document.createElement('p');
-  msg.style.color = 'red';
-  msg.textContent = 'You are not authorized to add vehicles.';
-  form.parentElement.insertBefore(msg, form);
+// ✅ Check whitelist via backend
+async function checkWhitelist(id) {
+  try {
+    const res = await fetch(`${API_BASE}/is-whitelisted/${id}`);
+    const result = await res.json();
+    return result.allowed === true;
+  } catch (err) {
+    console.error('Whitelist check failed:', err);
+    return false;
+  }
 }
+
+// ✅ Setup form visibility
+(async () => {
+  await loadVehicles();
+
+  if (!discordID) {
+    form.style.display = 'none';
+    const msg = document.createElement('p');
+    msg.style.color = 'red';
+    msg.textContent = 'Log in to add vehicles.';
+    form.parentElement.insertBefore(msg, form);
+    return;
+  }
+
+  const isAllowed = await checkWhitelist(discordID);
+  if (isAllowed) {
+    addedByInput.value = discordID;
+    form.style.display = 'block';
+  } else {
+    form.style.display = 'none';
+    const msg = document.createElement('p');
+    msg.style.color = 'red';
+    msg.textContent = 'You are not authorized to add vehicles.';
+    form.parentElement.insertBefore(msg, form);
+  }
+})();
 
 // ✅ Handle form submission
 form.addEventListener('submit', async (e) => {
@@ -95,6 +115,3 @@ form.addEventListener('submit', async (e) => {
     alert('Failed to add vehicle. Please try again.');
   }
 });
-
-// ✅ Initial load
-loadVehicles();

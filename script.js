@@ -17,15 +17,9 @@ const addedByInput = document.getElementById('added_by');
 
 // ✅ Show logged-in user
 const header = document.querySelector('h1');
-header.innerHTML += discordID ? ` <span style="font-size:0.6em;color:#888;">(Logged in as ${discordID})</span>` : '';
-
-// ✅ Hide form if not whitelisted
-if (!discordID || !allowedIDs.includes(discordID)) {
-  form.style.display = 'none';
-  vehicleList.innerHTML = `<p style="color:red;">You are not authorized to add vehicles.</p>`;
-} else {
-  addedByInput.value = discordID;
-}
+header.innerHTML += discordID
+  ? ` <span style="font-size:0.6em;color:#888;">(Logged in as ${discordID})</span>`
+  : '';
 
 // ✅ Load vehicles from backend
 async function loadVehicles() {
@@ -55,6 +49,18 @@ async function loadVehicles() {
     console.error('Failed to load vehicles:', err);
     vehicleList.innerHTML = '<p>Error loading vehicles.</p>';
   }
+}
+
+// ✅ Form visibility logic
+if (discordID && allowedIDs.includes(discordID)) {
+  addedByInput.value = discordID;
+  form.style.display = 'block';
+} else {
+  form.style.display = 'none';
+  const msg = document.createElement('p');
+  msg.style.color = 'red';
+  msg.textContent = 'You are not authorized to add vehicles.';
+  form.parentElement.insertBefore(msg, form);
 }
 
 // ✅ Handle form submission

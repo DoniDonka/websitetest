@@ -51,58 +51,71 @@ document.addEventListener('DOMContentLoaded', async () => {
   const messageBox = document.getElementById('messageBox');
   const loginBtn = document.getElementById('loginBtn');
 
-  // Check if user is admin
+  // Discord login check
   async function checkAdmin() {
     try {
       const res = await fetch('/is-whitelisted');
-      const result = await res.json();
-      return result.allowed;
-    } catch { return false; }
+      const data = await res.json();
+      return data.allowed;
+    } catch {
+      return false;
+    }
   }
 
   const isAdmin = await checkAdmin();
-  if (isAdmin) {
+  if(isAdmin){
     loginBtn.style.display = 'none';
-    messageBox.textContent = "Logged in as authorized admin";
+    messageBox.textContent = 'Logged in as authorized admin';
     adminFormContainer.style.display = 'block';
   } else {
     loginBtn.style.display = 'block';
-    messageBox.textContent = "Log in to add vehicles";
+    messageBox.textContent = 'Log in to add vehicles';
   }
 
-  loginBtn.addEventListener('click', () => window.location.href = '/login');
+  loginBtn.addEventListener('click', () => {
+    window.location.href = '/login';
+  });
 
-  // Load vehicles
   async function loadVehicles() {
-    const res = await fetch('/vehicles');
-    const vehicles = await res.json();
-    vehicleList.innerHTML = '';
-    if(vehicles.length===0){vehicleList.innerHTML="<p>No vehicles listed yet.</p>";return;}
-    vehicles.forEach(v => {
-      const div = document.createElement('div');
-      div.className = 'vehicle-card';
-      div.innerHTML = `
-        <div>
-          <strong>${v.name}</strong><br>
-          Miles: ${v.miles}<br>
-          Condition: ${v.condition}<br>
-          Added by: ${v.added_by}
-        </div>
-        ${v.image ? `<img src="${v.image}" alt="${v.name}">` : ''}
-        ${isAdmin ? `<button class="delete-btn" data-id="${v.id}">Delete</button>` : ''}
-      `;
-      vehicleList.appendChild(div);
-    });
+    try {
+      const res = await fetch('/vehicles');
+      const vehicles = await res.json();
+      vehicleList.innerHTML = '';
+      if(vehicles.length === 0){
+        vehicleList.innerHTML = '<p>No vehicles listed yet.</p>';
+        return;
+      }
 
-    document.querySelectorAll('.delete-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const id = btn.dataset.id;
-        const res = await fetch(`/vehicles/${id}`, { method: 'DELETE' });
-        const result = await res.json();
-        messageBox.textContent = result.message || 'Deleted';
-        await loadVehicles();
+      vehicles.forEach(v => {
+        const div = document.createElement('div');
+        div.className = 'vehicle-card';
+        div.innerHTML = `
+          <div>
+            <strong>${v.name}</strong><br>
+            Miles: ${v.miles}<br>
+            Condition: ${v.condition}<br>
+            Added by: ${v.added_by}
+          </div>
+          ${v.image ? `<img src="${v.image}" alt="${v.name}">` : ''}
+          ${isAdmin ? `<button class="delete-btn" data-id="${v.id}">Delete</button>` : ''}
+        `;
+        vehicleList.appendChild(div);
       });
-    });
+
+      // Delete buttons
+      document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = btn.dataset.id;
+          const res = await fetch(`/vehicles/${id}`, { method: 'DELETE' });
+          const result = await res.json();
+          messageBox.textContent = result.message || 'Deleted';
+          await loadVehicles();
+        });
+      });
+    } catch (err) {
+      vehicleList.innerHTML = '<p>Failed to load vehicles.</p>';
+      console.error(err);
+    }
   }
 
   await loadVehicles();
@@ -116,15 +129,25 @@ document.addEventListener('DOMContentLoaded', async () => {
       condition: document.getElementById('condition').value.trim(),
       image: document.getElementById('image').value.trim()
     };
-    const res = await fetch('/vehicles', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(vehicle)
-    });
-    const result = await res.json();
-    messageBox.textContent = result.message || 'Added';
-    form.reset();
-    await loadVehicles();
+
+    try {
+      const res = await fetch('/vehicles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(vehicle)
+      });
+      const result = await res.json();
+      if(res.ok){
+        messageBox.textContent = 'Vehicle added successfully!';
+        form.reset();
+        await loadVehicles();
+      } else {
+        messageBox.textContent = `Error: ${result.detail || 'Failed to add vehicle.'}`;
+      }
+    } catch (err) {
+      messageBox.textContent = 'Failed to submit vehicle. Check console.';
+      console.error(err);
+    }
   });
 });
 </script>

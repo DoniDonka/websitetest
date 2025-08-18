@@ -1,59 +1,75 @@
 // ✅ Whitelisted Discord IDs
 const allowedIDs = [
-  "329997541523587073", // Replace with real Discord IDs
+  "329997541523587073",
   "1287198545539104780"
 ];
 
-// ✅ Backend API base (Render)
+// ✅ Backend API base
 const API_BASE = 'https://ckrp-backend.onrender.com';
+
+// ✅ Get Discord ID from localStorage
+const discordID = localStorage.getItem('userDiscordID');
+
+// ✅ DOM elements
+const vehicleList = document.getElementById('vehicle-list');
+const form = document.getElementById('vehicle-form');
+const addedByInput = document.getElementById('added_by');
+
+// ✅ Show logged-in user
+const header = document.querySelector('h1');
+header.innerHTML += discordID ? ` <span style="font-size:0.6em;color:#888;">(Logged in as ${discordID})</span>` : '';
+
+// ✅ Hide form if not whitelisted
+if (!discordID || !allowedIDs.includes(discordID)) {
+  form.style.display = 'none';
+  vehicleList.innerHTML = `<p style="color:red;">You are not authorized to add vehicles.</p>`;
+} else {
+  addedByInput.value = discordID;
+}
 
 // ✅ Load vehicles from backend
 async function loadVehicles() {
   try {
     const res = await fetch(`${API_BASE}/vehicles`);
     const vehicles = await res.json();
-    const list = document.getElementById('vehicle-list');
-    list.innerHTML = '';
+    vehicleList.innerHTML = '';
 
     if (vehicles.length === 0) {
-      list.innerHTML = '<p>No vehicles yet.</p>';
+      vehicleList.innerHTML = '<p>No vehicles yet.</p>';
       return;
     }
 
     vehicles.forEach(v => {
-      list.innerHTML += `
-        <div class="vehicle">
-          <strong>${v.name}</strong><br>
-          Miles: ${v.miles}<br>
-          Condition: ${v.condition}<br>
-          Added by: ${v.added_by}<br>
-          ${v.image ? `<img src="${v.image}" alt="Vehicle Image">` : ''}
-        </div>
+      const div = document.createElement('div');
+      div.className = 'vehicle';
+      div.innerHTML = `
+        <strong>${v.name}</strong><br>
+        Miles: ${v.miles}<br>
+        Condition: ${v.condition}<br>
+        Added by: ${v.added_by}<br>
+        ${v.image ? `<img src="${v.image}" alt="Vehicle Image" style="max-width:200px;margin-top:5px;">` : ''}
       `;
+      vehicleList.appendChild(div);
     });
   } catch (err) {
     console.error('Failed to load vehicles:', err);
-    document.getElementById('vehicle-list').innerHTML = '<p>Error loading vehicles.</p>';
+    vehicleList.innerHTML = '<p>Error loading vehicles.</p>';
   }
 }
 
 // ✅ Handle form submission
-document.getElementById('vehicle-form').addEventListener('submit', async (e) => {
+form.addEventListener('submit', async (e) => {
   e.preventDefault();
 
-  const discordID = document.getElementById('added_by').value.trim();
-  if (!allowedIDs.includes(discordID)) {
-    alert("You are not authorized to add vehicles.");
-    return;
-  }
-
   const vehicle = {
-    name: document.getElementById('name').value,
+    name: document.getElementById('name').value.trim(),
     miles: parseInt(document.getElementById('miles').value),
-    condition: document.getElementById('condition').value,
-    image: document.getElementById('image').value,
+    condition: document.getElementById('condition').value.trim(),
+    image: document.getElementById('image').value.trim(),
     added_by: discordID
   };
+
+  console.log('Submitting vehicle:', vehicle);
 
   try {
     const res = await fetch(`${API_BASE}/vehicles`, {
@@ -67,7 +83,7 @@ document.getElementById('vehicle-form').addEventListener('submit', async (e) => 
     }
 
     await loadVehicles();
-    e.target.reset();
+    form.reset();
   } catch (err) {
     console.error('Error adding vehicle:', err);
     alert('Failed to add vehicle. Please try again.');

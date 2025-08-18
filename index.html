@@ -1,27 +1,73 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>CKRP Vehicle Marketplace</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <h1>CKRP Vehicle Marketplace</h1>
+document.addEventListener('DOMContentLoaded', () => {
+  const vehicleList = document.getElementById('vehicle-list');
+  const form = document.getElementById('vehicle-form');
+  const discordID = localStorage.getItem('userDiscordID');
 
-  <div id="vehicle-list">
-    <p>Loading vehicles...</p>
-  </div>
+  if (!discordID) {
+    vehicleList.innerHTML = `<p style="color:red;">Discord ID not found. Please log in or set it in localStorage.</p>`;
+    form.style.display = 'none';
+    return;
+  }
 
-  <h2>Add a Vehicle</h2>
-  <form id="vehicle-form">
-    <input type="text" id="name" placeholder="Vehicle Name" required>
-    <input type="number" id="miles" placeholder="Miles" required>
-    <input type="text" id="condition" placeholder="Condition" required>
-    <input type="text" id="image" placeholder="Image URL">
-    <input type="text" id="added_by" placeholder="Your Discord ID" required>
-    <button type="submit">Add Vehicle</button>
-  </form>
+  // Load vehicles
+  fetch('https://ckrp-backend.onrender.com/vehicles')
+    .then(res => res.json())
+    .then(data => {
+      vehicleList.innerHTML = '';
+      if (data.length === 0) {
+        vehicleList.innerHTML = '<p>No vehicles listed yet.</p>';
+        return;
+      }
+      data.forEach(vehicle => {
+        const div = document.createElement('div');
+        div.className = 'vehicle';
+        div.innerHTML = `
+          <h3>${vehicle.name}</h3>
+          <p>Miles: ${vehicle.miles}</p>
+          <p>Condition: ${vehicle.condition}</p>
+          <p>Added by: ${vehicle.added_by}</p>
+          ${vehicle.image ? `<img src="${vehicle.image}" alt="${vehicle.name}" style="max-width:200px;">` : ''}
+        `;
+        vehicleList.appendChild(div);
+      });
+    })
+    .catch(err => {
+      console.error('Error loading vehicles:', err);
+      vehicleList.innerHTML = '<p style="color:red;">Failed to load vehicles.</p>';
+    });
 
-  <script src="script.js"></script>
-</body>
-</html>
+  // Submit form
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const vehicle = {
+      name: document.getElementById('name').value.trim(),
+      miles: parseInt(document.getElementById('miles').value),
+      condition: document.getElementById('condition').value.trim(),
+      image: document.getElementById('image').value.trim(),
+      added_by: discordID
+    };
+
+    console.log('Submitting vehicle:', vehicle);
+
+    try {
+      const res = await fetch('https://ckrp-backend.onrender.com/vehicles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(vehicle)
+      });
+
+      const result = await res.json();
+      if (res.ok) {
+        alert('Vehicle added successfully!');
+        form.reset();
+        location.reload(); // Refresh to show new vehicle
+      } else {
+        alert(`Error: ${result.detail || 'Failed to add vehicle.'}`);
+      }
+    } catch (err) {
+      console.error('Submission error:', err);
+      alert('Failed to submit vehicle. Check console for details.');
+    }
+  });
+});

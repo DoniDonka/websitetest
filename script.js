@@ -1,17 +1,11 @@
+// ✅ Whitelisted Discord IDs
+const allowedIDs = [
+  "329997541523587073", // Replace with real Discord IDs
+  "1287198545539104780"
+];
+
 // ✅ Backend API base (Render)
 const API_BASE = 'https://ckrp-backend.onrender.com';
-
-// ✅ Check whitelist status from backend
-async function checkWhitelist(discordID) {
-  try {
-    const res = await fetch(`${API_BASE}/is-whitelisted/${discordID}`);
-    const data = await res.json();
-    return data.allowed;
-  } catch (err) {
-    console.error('Whitelist check failed:', err);
-    return false;
-  }
-}
 
 // ✅ Load vehicles from backend
 async function loadVehicles() {
@@ -26,10 +20,7 @@ async function loadVehicles() {
       return;
     }
 
-    const discordID = localStorage.getItem('userDiscordID');
-    const isAllowed = await checkWhitelist(discordID);
-
-    vehicles.forEach((v, i) => {
+    vehicles.forEach(v => {
       list.innerHTML += `
         <div class="vehicle">
           <strong>${v.name}</strong><br>
@@ -37,7 +28,6 @@ async function loadVehicles() {
           Condition: ${v.condition}<br>
           Added by: ${v.added_by}<br>
           ${v.image ? `<img src="${v.image}" alt="Vehicle Image">` : ''}
-          ${isAllowed ? `<button onclick="deleteVehicle(${i})">Delete</button>` : ''}
         </div>
       `;
     });
@@ -52,9 +42,7 @@ document.getElementById('vehicle-form').addEventListener('submit', async (e) => 
   e.preventDefault();
 
   const discordID = document.getElementById('added_by').value.trim();
-  const isAllowed = await checkWhitelist(discordID);
-
-  if (!isAllowed) {
+  if (!allowedIDs.includes(discordID)) {
     alert("You are not authorized to add vehicles.");
     return;
   }
@@ -86,33 +74,5 @@ document.getElementById('vehicle-form').addEventListener('submit', async (e) => 
   }
 });
 
-// ✅ Delete vehicle by index
-async function deleteVehicle(index) {
-  const discordID = localStorage.getItem('userDiscordID');
-  try {
-    const res = await fetch(`${API_BASE}/vehicles/${index}?discord_id=${discordID}`, {
-      method: 'DELETE'
-    });
-    if (!res.ok) throw new Error('Delete failed');
-    await loadVehicles();
-  } catch (err) {
-    console.error('Error deleting vehicle:', err);
-    alert('Failed to delete vehicle.');
-  }
-}
-
-// ✅ Prompt for Discord ID and hide form if not whitelisted
-(async () => {
-  let discordID = localStorage.getItem('userDiscordID');
-  if (!discordID) {
-    discordID = prompt("Enter your Discord ID:");
-    localStorage.setItem('userDiscordID', discordID);
-  }
-
-  const isAllowed = await checkWhitelist(discordID);
-  if (!isAllowed) {
-    document.getElementById('vehicle-form').style.display = 'none';
-  }
-
-  await loadVehicles();
-})();
+// ✅ Initial load
+loadVehicles();

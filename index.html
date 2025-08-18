@@ -2,40 +2,25 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Game Admin Panel</title>
+  <title>CKRP Vehicle Marketplace</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="login-screen">
-    <div class="login-card">
-      <h2>Login</h2>
-      <input type="text" id="username" placeholder="Username">
-      <input type="password" id="password" placeholder="Password">
-      <button onclick="authenticateUser(
-        document.getElementById('username').value,
-        document.getElementById('password').value
-      )">Log In</button>
-    </div>
+  <h1>CKRP Vehicle Marketplace</h1>
+
+  <div id="vehicle-list">
+    <p>Loading vehicles...</p>
   </div>
 
-  <div class="sidebar" style="display:none;">
-    <h2>Dashboard</h2>
-    <ul>
-      <li><a href="#">Overview</a></li>
-      <li><a href="#">Users</a></li>
-      <li><a href="#">Settings</a></li>
-    </ul>
-    <button id="toggle-theme">Toggle Theme</button>
-  </div>
-
-  <div class="main" style="display:none;">
-    <div class="topbar">
-      <p id="welcome-text">Welcome</p>
-    </div>
-    <div id="content-area">
-      <div class="card">Please log in to access the dashboard.</div>
-    </div>
-  </div>
+  <h2>Add a Vehicle</h2>
+  <form id="vehicle-form">
+    <input type="text" id="name" placeholder="Vehicle Name" required>
+    <input type="number" id="miles" placeholder="Miles" required>
+    <input type="text" id="condition" placeholder="Condition" required>
+    <input type="text" id="image" placeholder="Image URL">
+    <input type="text" id="added_by" placeholder="Your Discord ID" required>
+    <button type="submit">Add Vehicle</button>
+  </form>
 
   <script src="script.js"></script>
 </body>

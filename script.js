@@ -1,75 +1,46 @@
-// Theme toggle
-document.getElementById('toggle-theme').addEventListener('click', () => {
-  document.body.classList.toggle('dark-mode');
-});
+const API_BASE = 'http://localhost:8000'; // Replace with hosted backend URL later
 
-// Fake user database
-const users = [
-  { username: 'admin', password: 'admin123', role: 'admin' },
-  { username: 'guest', password: 'guest123', role: 'guest' }
-];
-
-// Login form handler
-function authenticateUser(username, password) {
-  const user = users.find(u => u.username === username && u.password === password);
-  if (user) {
-    localStorage.setItem('userRole', user.role);
-    loadDashboard(user.role);
-  } else {
-    alert('Invalid credentials');
+async function loadVehicles() {
+  try {
+    const res = await fetch(`${API_BASE}/vehicles`);
+    const vehicles = await res.json();
+    const list = document.getElementById('vehicle-list');
+    list.innerHTML = '';
+    vehicles.forEach(v => {
+      list.innerHTML += `
+        <div class="vehicle">
+          <strong>${v.name}</strong><br>
+          Miles: ${v.miles}<br>
+          Condition: ${v.condition}<br>
+          Added by: ${v.added_by}<br>
+          ${v.image ? `<img src="${v.image}">` : ''}
+        </div>
+      `;
+    });
+  } catch (err) {
+    document.getElementById('vehicle-list').innerHTML = '<p>Failed to load vehicles.</p>';
   }
 }
 
-// Load dashboard based on role
-function loadDashboard(role) {
-  const contentArea = document.getElementById('content-area');
-  if (role === 'admin') {
-    contentArea.innerHTML = `
-      <div class="card">Welcome Admin</div>
-      <div class="card">Manage Users</div>
-      <div class="card">Game Settings</div>
-    `;
-  } else {
-    contentArea.innerHTML = `
-      <div class="card">Welcome Guest</div>
-      <div class="card">View Stats</div>
-      <div class="card">Join Game</div>
-    `;
+document.getElementById('vehicle-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const data = {
+    name: document.getElementById('name').value,
+    miles: parseInt(document.getElementById('miles').value),
+    condition: document.getElementById('condition').value,
+    image: document.getElementById('image').value,
+    added_by: document.getElementById('added_by').value
+  };
+  try {
+    await fetch(`${API_BASE}/vehicles`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    loadVehicles();
+  } catch (err) {
+    alert('Failed to add vehicle.');
   }
-}
-
-// Sidebar navigation
-const links = document.querySelectorAll('.sidebar ul li a');
-links.forEach(link => {
-  link.addEventListener('click', (e) => {
-    e.preventDefault();
-    const page = link.textContent.trim();
-    const role = localStorage.getItem('userRole') || 'guest';
-
-    const contentArea = document.getElementById('content-area');
-    switch (page) {
-      case 'Overview':
-        loadDashboard(role);
-        break;
-      case 'Users':
-        contentArea.innerHTML = role === 'admin'
-          ? `<div class="card">User Management Panel</div>`
-          : `<div class="card">Access Denied</div>`;
-        break;
-      case 'Settings':
-        contentArea.innerHTML = `
-          <div class="card">Settings</div>
-          <label><input type="checkbox" onchange="document.body.classList.toggle('dark-mode')"> Night Mode</label>
-        `;
-        break;
-      default:
-        contentArea.innerHTML = `<div class="card">Welcome to the dashboard!</div>`;
-    }
-  });
 });
 
-// Auto-load role if already logged in
-window.addEventListener('DOMContentLoaded', () => {
-  const role = localStorage.getItem('userRole');
-  if (role) loadDashboard(role);
-});
+loadVehicles();

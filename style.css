@@ -1,145 +1,42 @@
 body {
-  margin: 0;
   font-family: Arial, sans-serif;
-  background-color: #f0f2f5;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
+  padding: 20px;
+  max-width: 800px;
+  margin: auto;
 }
 
-#login-screen {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
+h1, h2 {
+  color: #333;
 }
 
-.login-card {
-  background: white;
-  padding: 30px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-  border-radius: 10px;
-  text-align: center;
-  width: 300px;
-}
-
-.login-card h2 {
-  margin-bottom: 20px;
-}
-
-.login-card input {
-  width: 100%;
-  padding: 10px;
-  margin: 10px 0;
+.vehicle {
   border: 1px solid #ccc;
-  border-radius: 5px;
-}
-
-.login-card button {
-  width: 100%;
   padding: 10px;
-  background-color: #3498db;
-  color: white;
-  border: none;
+  margin-bottom: 10px;
   border-radius: 5px;
-  cursor: pointer;
 }
 
-.login-card button:hover {
-  background-color: #2980b9;
+img {
+  max-width: 100%;
+  height: auto;
+  margin-top: 5px;
 }
 
-.sidebar {
-  width: 200px;
-  background: #2c3e50;
-  color: white;
-  padding: 20px;
-  height: 100vh;
-  position: fixed;
-  left: 0;
-  top: 0;
-}
-
-.sidebar h2 {
-  margin-top: 0;
-}
-
-.sidebar ul {
-  list-style: none;
-  padding: 0;
-}
-
-.sidebar ul li a {
-  color: white;
-  text-decoration: none;
+input, button {
   display: block;
-  margin: 10px 0;
-  transition: color 0.2s ease;
+  margin: 8px 0;
+  padding: 8px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.sidebar ul li a:hover {
-  color: #1abc9c;
-}
-
-button#toggle-theme {
-  margin-top: 20px;
-  background: #1abc9c;
-  border: none;
-  padding: 10px;
+button {
+  background-color: #007bff;
   color: white;
+  border: none;
   cursor: pointer;
 }
 
-.main {
-  margin-left: 200px;
-  padding: 20px;
-  width: calc(100% - 200px);
-}
-
-.topbar {
-  background: #3498db;
-  padding: 10px;
-  color: white;
-  font-weight: bold;
-}
-
-#content-area {
-  margin-top: 20px;
-}
-
-.card {
-  background: white;
-  padding: 20px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  margin-bottom: 15px;
-  border-radius: 8px;
-  text-align: center;
-}
-
-/* Dark mode styles */
-.dark-mode body {
-  background-color: #1c1c1c;
-}
-
-.dark-mode .card {
-  background-color: #333;
-  color: #eee;
-}
-
-.dark-mode .topbar {
-  background-color: #444;
-}
-
-.dark-mode .sidebar {
-  background-color: #111;
-}
-
-.dark-mode .sidebar ul li a {
-  color: #ccc;
-}
-
-.dark-mode button#toggle-theme {
-  background: #555;
+button:hover {
+  background-color: #0056b3;
 }

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CK:RP Vehicle Marketplace</title>
+<style>
+body { font-family: Arial, sans-serif; background: #121212; color: #fff; margin: 0; padding: 20px; }
+.container { max-width: 900px; margin: auto; }
+.vehicle-card { background: #1e1e1e; padding: 15px; margin: 10px 0; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
+.vehicle-card img { max-width: 200px; margin-left: 10px; border-radius: 4px; }
+button { background: #007bff; color: #fff; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; }
+button:hover { background: #0056b3; }
+form { display: flex; flex-direction: column; gap: 10px; background: #1e1e1e; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+input, select { padding: 8px; border-radius: 4px; border: none; }
+.message-box { margin-bottom: 10px; font-weight: bold; }
+#loginBtn { background: #7289da; margin-bottom: 20px; }
+#loginBtn:hover { background: #5b6eae; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>CK:RP Vehicle Marketplace</h1>
+
+  <button id="loginBtn">Login with Discord</button>
+  <p class="message-box" id="messageBox"></p>
+
+  <!-- Admin Form -->
+  <div id="adminFormContainer" style="display:none;">
+    <h2>Add Vehicle</h2>
+    <form id="vehicleForm">
+      <input type="text" id="name" placeholder="Vehicle Name" required>
+      <input type="number" id="miles" placeholder="Miles" required>
+      <select id="condition">
+        <option value="New">New</option>
+        <option value="Like New">Like New</option>
+        <option value="Used">Used</option>
+      </select>
+      <input type="text" id="image" placeholder="Image URL">
+      <button type="submit">Add Vehicle</button>
+    </form>
+  </div>
+
+  <h2>Vehicles</h2>
+  <div id="vehicleList"></div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  const vehicleList = document.getElementById('vehicleList');
+  const form = document.getElementById('vehicleForm');
+  const adminFormContainer = document.getElementById('adminFormContainer');
+  const messageBox = document.getElementById('messageBox');
+  const loginBtn = document.getElementById('loginBtn');
+  const API_URL = "https://ckrp-backend.onrender.com";
+
+  let discordID = localStorage.getItem('userDiscordID'); // Placeholder until OAuth2 login
+
+  // Login button (placeholder for OAuth2)
+  loginBtn.addEventListener('click', () => {
+    // Redirect to your backend OAuth2 login endpoint
+    window.location.href = `${API_URL}/login`;
+  });
+
+  // Show logged-in user
+  const header = document.querySelector('h1');
+  if (discordID) header.innerHTML += ` <span style="font-size:0.6em;color:#888;">(Logged in as ${discordID})</span>`;
+
+  // Load vehicles
+  async function loadVehicles() {
+    try {
+      const res = await fetch(`${API_URL}/vehicles`);
+      const vehicles = await res.json();
+      vehicleList.innerHTML = '';
+      if (vehicles.length === 0) vehicleList.innerHTML = '<p>No vehicles listed yet.</p>';
+
+      vehicles.forEach(v => {
+        const div = document.createElement('div');
+        div.className = 'vehicle-card';
+        div.innerHTML = `
+          <div>
+            <strong>${v.name}</strong><br>
+            Miles: ${v.miles}<br>
+            Condition: ${v.condition}<br>
+            Added by: ${v.added_by}
+          </div>
+          ${v.image ? `<img src="${v.image}" alt="${v.name}">` : ''}
+          ${discordID ? `<button class="delete-btn" data-id="${v.id}">Delete</button>` : ''}
+        `;
+        vehicleList.appendChild(div);
+      });
+
+      // Delete buttons
+      document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = btn.dataset.id;
+          try {
+            const res = await fetch(`${API_URL}/vehicles/${id}?discord_id=${discordID}`, { method: 'DELETE' });
+            const result = await res.json();
+            messageBox.style.color = 'green';
+            messageBox.textContent = result.message || 'Vehicle deleted!';
+            await loadVehicles();
+          } catch {
+            messageBox.style.color = 'red';
+            messageBox.textContent = 'Failed to delete vehicle.';
+          }
+        });
+      });
+
+    } catch (err) {
+      vehicleList.innerHTML = '<p style="color:red;">Failed to load vehicles.</p>';
+      console.error(err);
+    }
+  }
+
+  await loadVehicles();
+
+  // Check whitelist
+  async function checkWhitelist(id) {
+    if (!id) return false;
+    try {
+      const res = await fetch(`${API_URL}/is-whitelisted/${id}`);
+      const result = await res.json();
+      return result.allowed === true;
+    } catch {
+      return false;
+    }
+  }
+
+  // Show form only for admins
+  if (discordID && await checkWhitelist(discordID)) {
+    adminFormContainer.style.display = 'block';
+  } else {
+    adminFormContainer.style.display = 'none';
+    messageBox.style.color = 'red';
+    messageBox.textContent = discordID ? 'You are not authorized to add vehicles.' : 'Log in to add vehicles.';
+  }
+
+  // Submit vehicle
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const vehicle = {
+      name: document.getElementById('name').value.trim(),
+      miles: parseInt(document.getElementById('miles').value),
+      condition: document.getElementById('condition').value.trim(),
+      image: document.getElementById('image').value.trim(),
+      added_by: discordID
+    };
+    try {
+      const res = await fetch(`${API_URL}/vehicles`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(vehicle)
+      });
+      const result = await res.json();
+      if (res.ok) {
+        messageBox.style.color = 'green';
+        messageBox.textContent = 'Vehicle added successfully!';
+        form.reset();
+        await loadVehicles();
+      } else {
+        messageBox.style.color = 'red';
+        messageBox.textContent = result.detail || 'Failed to add vehicle.';
+      }
+    } catch {
+      messageBox.style.color = 'red';
+      messageBox.textContent = 'Failed to submit vehicle.';
+    }
+  });
+});
+</script>
+</body>
+</html>

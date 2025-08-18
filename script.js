@@ -1,7 +1,7 @@
-// ✅ Backend API base (Render)
+// ✅ Backend API base
 const API_BASE = 'https://ckrp-backend.onrender.com';
 
-// ✅ Check whitelist status from backend
+// ✅ Check whitelist status
 async function checkWhitelist(discordID) {
   try {
     const res = await fetch(`${API_BASE}/is-whitelisted/${discordID}`);
@@ -13,7 +13,7 @@ async function checkWhitelist(discordID) {
   }
 }
 
-// ✅ Load vehicles from backend
+// ✅ Load vehicles
 async function loadVehicles() {
   try {
     const res = await fetch(`${API_BASE}/vehicles`);
@@ -30,16 +30,17 @@ async function loadVehicles() {
     const isAllowed = await checkWhitelist(discordID);
 
     vehicles.forEach((v, i) => {
-      list.innerHTML += `
-        <div class="vehicle">
-          <strong>${v.name}</strong><br>
-          Miles: ${v.miles}<br>
-          Condition: ${v.condition}<br>
-          Added by: ${v.added_by}<br>
+      const vehicleHTML = `
+        <div class="vehicle-card">
+          <h3>${v.name}</h3>
+          <p>Miles: ${v.miles}</p>
+          <p>Condition: ${v.condition}</p>
+          <p>Added by: ${v.added_by}</p>
           ${v.image ? `<img src="${v.image}" alt="Vehicle Image">` : ''}
           ${isAllowed ? `<button onclick="deleteVehicle(${i})">Delete</button>` : ''}
         </div>
       `;
+      list.innerHTML += vehicleHTML;
     });
   } catch (err) {
     console.error('Failed to load vehicles:', err);
@@ -47,11 +48,11 @@ async function loadVehicles() {
   }
 }
 
-// ✅ Handle form submission
+// ✅ Submit form
 document.getElementById('vehicle-form').addEventListener('submit', async (e) => {
   e.preventDefault();
 
-  const discordID = document.getElementById('added_by').value.trim();
+  const discordID = localStorage.getItem('userDiscordID');
   const isAllowed = await checkWhitelist(discordID);
 
   if (!isAllowed) {
@@ -74,9 +75,7 @@ document.getElementById('vehicle-form').addEventListener('submit', async (e) => 
       body: JSON.stringify(vehicle)
     });
 
-    if (!res.ok) {
-      throw new Error('Failed to add vehicle');
-    }
+    if (!res.ok) throw new Error('Failed to add vehicle');
 
     await loadVehicles();
     e.target.reset();
@@ -86,7 +85,7 @@ document.getElementById('vehicle-form').addEventListener('submit', async (e) => 
   }
 });
 
-// ✅ Delete vehicle by index
+// ✅ Delete vehicle
 async function deleteVehicle(index) {
   const discordID = localStorage.getItem('userDiscordID');
   try {
@@ -101,22 +100,12 @@ async function deleteVehicle(index) {
   }
 }
 
-// ✅ Theme toggle logic
+// ✅ Theme toggle
 function applyTheme(theme) {
-  const body = document.body;
-  const toggleBtn = document.querySelector('#theme-toggle button');
-
-  if (theme === 'dark') {
-    body.style.backgroundColor = '#121212';
-    body.style.color = '#e0e0e0';
-    toggleBtn.textContent = '🌞 Light';
-  } else {
-    body.style.backgroundColor = '#ffffff';
-    body.style.color = '#222222';
-    toggleBtn.textContent = '🌙 Dark';
-  }
-
+  document.body.classList.remove('dark-mode', 'light-mode');
+  document.body.classList.add(`${theme}-mode`);
   localStorage.setItem('theme', theme);
+  document.querySelector('#theme-toggle button').textContent = theme === 'dark' ? '🌞 Light' : '🌙 Dark';
 }
 
 function toggleTheme() {
@@ -125,7 +114,7 @@ function toggleTheme() {
   applyTheme(next);
 }
 
-// ✅ Prompt for Discord ID and hide form if not whitelisted
+// ✅ Init
 (async () => {
   let discordID = localStorage.getItem('userDiscordID');
   if (!discordID) {

@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Check whitelist via backend
     if (discordID) {
         try {
-            const res = await fetch(`https://ckrp-backend.onrender.com/is-whitelisted/${discordID}`);
+            const res = await fetch(`/is-whitelisthttp://127.0.0.1:8000ed/${discordID}`);
             const result = await res.json();
             isWhitelisted = result.allowed;
 
@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Load blacklist entries
     try {
-        const res = await fetch('https://ckrp-backend.onrender.com/api/blacklist');
+        const res = await fetch('http://127.0.0.1:8000/api/blacklist');
         const data = await res.json();
         entryList.innerHTML = '';
 
@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     deleteBtn.style.marginTop = '8px';
                     deleteBtn.onclick = async () => {
                         try {
-                            const res = await fetch(`https://ckrp-backend.onrender.com/blacklist/${index}?discord_id=${discordID}`, {
+                            const res = await fetch(`http://127.0.0.1:8000/blacklist/${index}?discord_id=${discordID}`, {
                                 method: 'DELETE'
                             });
                             const result = await res.json();
@@ -102,7 +102,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         console.log('Submitting blacklist entry:', entry);
         try {
-            const res = await fetch('https://ckrp-backend.onrender.com/api/blacklist', {
+            const res = await fetch('http://127.0.0.1:8000/api/blacklist', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(entry)

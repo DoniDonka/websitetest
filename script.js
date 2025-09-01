@@ -1,53 +1,28 @@
 document.addEventListener('DOMContentLoaded', async () => {
-    const entryList = document.getElementById('vehicle-list'); // reuse container
+    const entryList = document.getElementById('vehicle-list');
     const form = document.getElementById('vehicle-form');
     const addedByInput = document.getElementById('added_by');
     const discordID = localStorage.getItem('userDiscordID');
+    let isWhitelisted = false;
 
     // Show logged-in user
     const header = document.querySelector('h1');
     header.innerHTML += discordID ? ` (Logged in as ${discordID})` : '';
-
-    // Always load blacklist entries
-    try {
-        const res = await fetch('https://ckrp-backend.onrender.com/blacklist');
-        const data = await res.json();
-        entryList.innerHTML = '';
-
-        if (data.length === 0) {
-            entryList.innerHTML = '<p>No players blacklisted yet.</p>';
-        } else {
-            data.forEach(entry => {
-                const div = document.createElement('div');
-                div.className = 'vehicle'; // reuse styling
-                div.innerHTML = `
-                    <strong>${entry.name}</strong><br>
-                    Danger Level: ${entry.miles}<br>
-                    Reason: ${entry.condition}<br>
-                    Submitted by: ${entry.added_by}<br>
-                    ${entry.image ? `<img src="${entry.image}" alt="${entry.name}">` : ''}
-                `;
-                entryList.appendChild(div);
-            });
-        }
-    } catch (err) {
-        console.error('Error loading blacklist:', err);
-        entryList.innerHTML = '<p>Failed to load blacklist.</p>';
-    }
 
     // Check whitelist via backend
     if (discordID) {
         try {
             const res = await fetch(`https://ckrp-backend.onrender.com/is-whitelisted/${discordID}`);
             const result = await res.json();
+            isWhitelisted = result.allowed;
 
-            if (result.allowed) {
+            if (isWhitelisted) {
                 addedByInput.value = discordID;
                 form.style.display = 'block';
             } else {
                 form.style.display = 'none';
                 const msg = document.createElement('p');
-                msg.style.color = 'red';
+                msg.className = 'warning';
                 msg.textContent = 'You are not authorized to submit blacklist entries.';
                 form.parentElement.insertBefore(msg, form);
             }
@@ -58,9 +33,60 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else {
         form.style.display = 'none';
         const msg = document.createElement('p');
-        msg.style.color = 'red';
+        msg.className = 'warning';
         msg.textContent = 'Log in to submit blacklist entries.';
         form.parentElement.insertBefore(msg, form);
+    }
+
+    // Load blacklist entries
+    try {
+        const res = await fetch('https://ckrp-backend.onrender.com/api/blacklist');
+        const data = await res.json();
+        entryList.innerHTML = '';
+
+        if (data.length === 0) {
+            entryList.innerHTML = '<p>No players blacklisted yet.</p>';
+        } else {
+            data.forEach((entry, index) => {
+                const div = document.createElement('div');
+                div.className = 'blacklist-entry';
+                if (entry.miles >= 8) div.classList.add('danger-high');
+
+                div.innerHTML = `
+                    <strong>${entry.name}</strong><br>
+                    Danger Level: ${entry.miles}<br>
+                    Reason: ${entry.condition}<br>
+                    Submitted by: ${entry.added_by}<br>
+                    ${entry.image ? `<img src="${entry.image}" alt="${entry.name}">` : ''}
+                `;
+
+                // Add delete button if whitelisted
+                if (isWhitelisted) {
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.textContent = 'Delete';
+                    deleteBtn.style.marginTop = '8px';
+                    deleteBtn.onclick = async () => {
+                        try {
+                            const res = await fetch(`https://ckrp-backend.onrender.com/blacklist/${index}?discord_id=${discordID}`, {
+                                method: 'DELETE'
+                            });
+                            const result = await res.json();
+                            alert(result.message || 'Deleted');
+                            location.reload();
+                        } catch (err) {
+                            console.error('Delete error:', err);
+                            alert('Failed to delete entry.');
+                        }
+                    };
+                    div.appendChild(deleteBtn);
+                }
+
+                entryList.appendChild(div);
+            });
+        }
+    } catch (err) {
+        console.error('Error loading blacklist:', err);
+        entryList.innerHTML = '<p>Failed to load blacklist.</p>';
     }
 
     // Submit form
@@ -76,7 +102,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         console.log('Submitting blacklist entry:', entry);
         try {
-            const res = await fetch('https://ckrp-backend.onrender.com/blacklist', {
+            const res = await fetch('https://ckrp-backend.onrender.com/api/blacklist', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(entry)
@@ -88,7 +114,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 form.reset();
                 location.reload();
             } else {
-                alert(`Error: ${result.detail || 'Failed to blacklist player.'}`);
+                alert(`Error: ${result.detail || result.error || 'Failed to blacklist player.'}`);
             }
         } catch (err) {
             console.error('Submission error:', err);

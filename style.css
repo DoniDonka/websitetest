@@ -9,11 +9,17 @@ h1, h2 {
   color: #333;
 }
 
-.vehicle {
+.blacklist-entry {
   border: 1px solid #ccc;
   padding: 10px;
   margin-bottom: 10px;
   border-radius: 5px;
+}
+
+/* Optional: highlight high danger level */
+.danger-high {
+  border-left: 5px solid red;
+  background-color: #ffe5e5;
 }
 
 img {
@@ -40,3 +46,16 @@ button {
 button:hover {
   background-color: #0056b3;
 }
+
+label {
+  font-weight: bold;
+  margin-top: 10px;
+  display: block;
+}
+
+.warning {
+  color: red;
+  font-weight: bold;
+  margin: 10px 0;
+}
+

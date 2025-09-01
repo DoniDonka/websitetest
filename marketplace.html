@@ -2,24 +2,24 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>CK:RP Vehicle Marketplace</title>
+  <title>CK:RP Player Blacklist</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>CK:RP Vehicle Marketplace</h1>
+  <h1>CK:RP Player Blacklist</h1>
 
   <div id="vehicle-list">
-    <p>Loading vehicles...</p>
+    <p>Loading blacklist entries...</p>
   </div>
 
-  <h2>Add a Vehicle</h2>
+  <h2>Blacklist a Player</h2>
   <form id="vehicle-form">
-    <input type="text" id="name" placeholder="Vehicle Name" required>
-    <input type="number" id="miles" placeholder="Miles" required>
-    <input type="text" id="condition" placeholder="Condition" required>
-    <input type="text" id="image" placeholder="Image URL">
+    <input type="text" id="name" placeholder="Username" required>
+    <input type="number" id="miles" placeholder="Danger Level (1–10)" required>
+    <input type="text" id="condition" placeholder="Reason for Blacklisting" required>
+    <input type="text" id="image" placeholder="Player Image URL">
     <input type="text" id="added_by" placeholder="Your Discord ID" required>
-    <button type="submit">Add Vehicle</button>
+    <button type="submit">Blacklist Player</button>
   </form>
 
   <script src="script.js"></script>

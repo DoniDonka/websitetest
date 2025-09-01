@@ -1,78 +1,99 @@
-// ✅ Whitelisted Discord IDs
-const allowedIDs = [
-  "329997541523587073", // Replace with real Discord IDs
-  "1287198545539104780"
-];
+document.addEventListener('DOMContentLoaded', async () => {
+    const entryList = document.getElementById('vehicle-list'); // reuse container
+    const form = document.getElementById('vehicle-form');
+    const addedByInput = document.getElementById('added_by');
+    const discordID = localStorage.getItem('userDiscordID');
 
-// ✅ Backend API base (Render)
-const API_BASE = 'https://ckrp-backend.onrender.com';
+    // Show logged-in user
+    const header = document.querySelector('h1');
+    header.innerHTML += discordID ? ` (Logged in as ${discordID})` : '';
 
-// ✅ Load vehicles from backend
-async function loadVehicles() {
-  try {
-    const res = await fetch(`${API_BASE}/vehicles`);
-    const vehicles = await res.json();
-    const list = document.getElementById('vehicle-list');
-    list.innerHTML = '';
+    // Always load blacklist entries
+    try {
+        const res = await fetch('https://ckrp-backend.onrender.com/blacklist');
+        const data = await res.json();
+        entryList.innerHTML = '';
 
-    if (vehicles.length === 0) {
-      list.innerHTML = '<p>No vehicles yet.</p>';
-      return;
+        if (data.length === 0) {
+            entryList.innerHTML = '<p>No players blacklisted yet.</p>';
+        } else {
+            data.forEach(entry => {
+                const div = document.createElement('div');
+                div.className = 'vehicle'; // reuse styling
+                div.innerHTML = `
+                    <strong>${entry.name}</strong><br>
+                    Danger Level: ${entry.miles}<br>
+                    Reason: ${entry.condition}<br>
+                    Submitted by: ${entry.added_by}<br>
+                    ${entry.image ? `<img src="${entry.image}" alt="${entry.name}">` : ''}
+                `;
+                entryList.appendChild(div);
+            });
+        }
+    } catch (err) {
+        console.error('Error loading blacklist:', err);
+        entryList.innerHTML = '<p>Failed to load blacklist.</p>';
     }
 
-    vehicles.forEach(v => {
-      list.innerHTML += `
-        <div class="vehicle">
-          <strong>${v.name}</strong><br>
-          Miles: ${v.miles}<br>
-          Condition: ${v.condition}<br>
-          Added by: ${v.added_by}<br>
-          ${v.image ? `<img src="${v.image}" alt="Vehicle Image">` : ''}
-        </div>
-      `;
-    });
-  } catch (err) {
-    console.error('Failed to load vehicles:', err);
-    document.getElementById('vehicle-list').innerHTML = '<p>Error loading vehicles.</p>';
-  }
-}
+    // Check whitelist via backend
+    if (discordID) {
+        try {
+            const res = await fetch(`https://ckrp-backend.onrender.com/is-whitelisted/${discordID}`);
+            const result = await res.json();
 
-// ✅ Handle form submission
-document.getElementById('vehicle-form').addEventListener('submit', async (e) => {
-  e.preventDefault();
-
-  const discordID = document.getElementById('added_by').value.trim();
-  if (!allowedIDs.includes(discordID)) {
-    alert("You are not authorized to add vehicles.");
-    return;
-  }
-
-  const vehicle = {
-    name: document.getElementById('name').value,
-    miles: parseInt(document.getElementById('miles').value),
-    condition: document.getElementById('condition').value,
-    image: document.getElementById('image').value,
-    added_by: discordID
-  };
-
-  try {
-    const res = await fetch(`${API_BASE}/vehicles`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(vehicle)
-    });
-
-    if (!res.ok) {
-      throw new Error('Failed to add vehicle');
+            if (result.allowed) {
+                addedByInput.value = discordID;
+                form.style.display = 'block';
+            } else {
+                form.style.display = 'none';
+                const msg = document.createElement('p');
+                msg.style.color = 'red';
+                msg.textContent = 'You are not authorized to submit blacklist entries.';
+                form.parentElement.insertBefore(msg, form);
+            }
+        } catch (err) {
+            console.error('Whitelist check failed:', err);
+            form.style.display = 'none';
+        }
+    } else {
+        form.style.display = 'none';
+        const msg = document.createElement('p');
+        msg.style.color = 'red';
+        msg.textContent = 'Log in to submit blacklist entries.';
+        form.parentElement.insertBefore(msg, form);
     }
 
-    await loadVehicles();
-    e.target.reset();
-  } catch (err) {
-    console.error('Error adding vehicle:', err);
-    alert('Failed to add vehicle. Please try again.');
-  }
+    // Submit form
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const entry = {
+            name: document.getElementById('name').value.trim(),
+            miles: parseInt(document.getElementById('miles').value),
+            condition: document.getElementById('condition').value.trim(),
+            image: document.getElementById('image').value.trim(),
+            added_by: discordID
+        };
+
+        console.log('Submitting blacklist entry:', entry);
+        try {
+            const res = await fetch('https://ckrp-backend.onrender.com/blacklist', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(entry)
+            });
+            const result = await res.json();
+
+            if (res.ok) {
+                alert('Player blacklisted successfully!');
+                form.reset();
+                location.reload();
+            } else {
+                alert(`Error: ${result.detail || 'Failed to blacklist player.'}`);
+            }
+        } catch (err) {
+            console.error('Submission error:', err);
+            alert('Failed to submit blacklist entry. Check console for details.');
+        }
+    });
 });
 
-// ✅ Initial load
-loadVehicles();

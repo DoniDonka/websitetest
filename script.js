@@ -1,34 +1,32 @@
 document.addEventListener('DOMContentLoaded', async () => {
-    const entryList = document.getElementById('vehicle-list');
-    const form = document.getElementById('vehicle-form');
+    const entryList = document.getElementById('blacklist-list');
+    const form = document.getElementById('blacklist-form');
     const usernameInput = document.getElementById('added_by');
+    const targetInput = document.getElementById('target');
     const reasonInput = document.getElementById('reason');
-    const BASE_URL = 'https://ckrp.example.com/vehicles'; // Replace with your actual backend URL
+    const BASE_URL = 'https://ckrp.example.com/blacklist'; // Update to your backend URL
     const discordID = localStorage.getItem('userDiscordID') || '';
 
-    // Populate the "added_by" field automatically
+    // Auto-fill username field
     usernameInput.value = discordID;
 
-    // Helper: create a vehicle list item
-    function createVehicleItem(vehicle) {
+    // Helper: create a blacklist list item
+    function createBlacklistItem(entry) {
         const li = document.createElement('li');
-        li.dataset.id = vehicle.id;
-        li.textContent = `ID: ${vehicle.id} | Model: ${vehicle.model} | Added by: ${vehicle.username} | Reason: ${vehicle.reason}`;
+        li.dataset.id = entry.id;
+        li.textContent = `Target: ${entry.target} | Added by: ${entry.username} | Reason: ${entry.reason}`;
 
         const deleteBtn = document.createElement('button');
         deleteBtn.textContent = 'Delete';
         deleteBtn.style.marginLeft = '10px';
         deleteBtn.addEventListener('click', async () => {
             try {
-                const res = await fetch(`${BASE_URL}/${vehicle.id}`, { method: 'DELETE' });
-                if (res.ok) {
-                    li.remove();
-                } else {
-                    alert('Failed to delete vehicle');
-                }
+                const res = await fetch(`${BASE_URL}/${entry.id}`, { method: 'DELETE' });
+                if (!res.ok) throw new Error('Failed to delete entry');
+                li.remove();
             } catch (err) {
-                console.error(err);
-                alert('Error deleting vehicle');
+                console.error('Delete error:', err);
+                alert('Error deleting entry.');
             }
         });
 
@@ -36,23 +34,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         return li;
     }
 
-    // Fetch and display vehicles
-    async function loadVehicles() {
+    // Load blacklist entries
+    async function loadBlacklist() {
         entryList.innerHTML = '';
         try {
             const res = await fetch(BASE_URL);
-            if (!res.ok) throw new Error('Failed to fetch vehicles');
-            const vehicles = await res.json();
-            vehicles.forEach(vehicle => {
-                entryList.appendChild(createVehicleItem(vehicle));
+            if (!res.ok) throw new Error('Failed to fetch blacklist');
+            const entries = await res.json();
+            entries.forEach(entry => {
+                entryList.appendChild(createBlacklistItem(entry));
             });
         } catch (err) {
-            console.error(err);
-            entryList.textContent = 'Error loading vehicles.';
+            console.error('Load error:', err);
+            entryList.textContent = 'Error loading blacklist.';
         }
     }
 
-    await loadVehicles();
+    await loadBlacklist();
 
     // Handle form submission
     form.addEventListener('submit', async (e) => {
@@ -60,11 +58,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const data = {
             username: usernameInput.value.trim(),
-            reason: reasonInput.value.trim(),
-            model: form.model.value.trim()
+            target: targetInput.value.trim(),
+            reason: reasonInput.value.trim()
         };
 
-        if (!data.username || !data.model || !data.reason) {
+        console.log('Submitting:', data);
+
+        if (!data.username || !data.target || !data.reason) {
             alert('Please fill all fields.');
             return;
         }
@@ -76,15 +76,26 @@ document.addEventListener('DOMContentLoaded', async () => {
                 body: JSON.stringify(data)
             });
 
-            if (!res.ok) throw new Error('Failed to add vehicle');
+            let responseData;
+            try {
+                responseData = await res.json();
+            } catch {
+                responseData = {};
+            }
 
-            const newVehicle = await res.json();
-            entryList.appendChild(createVehicleItem(newVehicle));
+            if (!res.ok || responseData.error || !responseData.id) {
+                console.error('Backend error:', responseData);
+                alert('Failed to submit blacklist entry: ' + (responseData.error || 'Unknown error'));
+                return;
+            }
+
+            entryList.appendChild(createBlacklistItem(responseData));
             form.reset();
-            usernameInput.value = discordID; // Keep the discordID filled
+            usernameInput.value = discordID;
+
         } catch (err) {
-            console.error(err);
-            alert('Error adding vehicle.');
+            console.error('Submit error:', err);
+            alert('Error submitting entry.');
         }
     });
 });

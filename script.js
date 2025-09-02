@@ -6,18 +6,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     const BASE_URL = 'http://127.0.0.1:8000';
     let isWhitelisted = false;
 
-    // Hide form initially to prevent flash
+    // Hide form initially
     form.style.display = 'none';
 
     const header = document.querySelector('h1');
 
-    // Hardcoded whitelist
+    // Whitelisted Discord IDs
     const whitelistIDs = [
-        "329997541523587073",
-        "1094486136283467847",
-        "898599688918405181"
+        "329997541523587073", // Doni
+        "1094486136283467847", // Pin
+        "898599688918405181"  // Musc
     ];
 
+    // Check whitelist
     if (discordID && whitelistIDs.includes(discordID)) {
         isWhitelisted = true;
         addedByInput.value = discordID;
@@ -35,7 +36,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Load blacklist entries
     try {
         const res = await fetch(`${BASE_URL}/api/blacklist`);
-        if (!res.ok) throw new Error('Failed to fetch');
+        if (!res.ok) throw new Error('Failed to fetch blacklist');
         const data = await res.json();
         entryList.innerHTML = '';
 
@@ -55,6 +56,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     ${entry.image ? `<img src="${entry.image}" alt="${entry.name}">` : ''}
                 `;
 
+                // Add delete button if whitelisted
                 if (isWhitelisted) {
                     const deleteBtn = document.createElement('button');
                     deleteBtn.textContent = 'Delete';
@@ -86,9 +88,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Submit form
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
+
         const entry = {
             name: document.getElementById('name').value.trim(),
-            miles: document.getElementById('miles').value.trim(),
+            miles: parseInt(document.getElementById('miles').value.trim()),
             condition: document.getElementById('condition').value.trim(),
             image: document.getElementById('image').value.trim(),
             added_by: discordID
@@ -107,7 +110,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 form.reset();
                 location.reload();
             } else {
-                alert(`Error: ${result.detail || result.error || 'Failed to blacklist player.'}`);
+                // Show proper error message
+                console.error(result);
+                alert(result.detail || result.error || JSON.stringify(result, null, 2));
             }
         } catch (err) {
             console.error('Submission error:', err);

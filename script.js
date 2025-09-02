@@ -6,9 +6,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const BASE_URL = 'http://127.0.0.1:8000';
     let isWhitelisted = false;
 
-    const header = document.querySelector('h1');
-    header.innerHTML += discordID ? ` (Logged in as ${discordID})` : '';
+    // Hide form initially to prevent flash
+    form.style.display = 'none';
 
+    const header = document.querySelector('h1');
+
+    // Hardcoded whitelist
     const whitelistIDs = [
         "329997541523587073",
         "1094486136283467847",
@@ -19,8 +22,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         isWhitelisted = true;
         addedByInput.value = discordID;
         form.style.display = 'block';
+        header.innerHTML += ` (Logged in as ${discordID})`;
     } else {
-        form.style.display = 'none';
         const msg = document.createElement('p');
         msg.className = 'warning';
         msg.textContent = discordID
@@ -29,8 +32,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         form.parentElement.insertBefore(msg, form);
     }
 
+    // Load blacklist entries
     try {
         const res = await fetch(`${BASE_URL}/api/blacklist`);
+        if (!res.ok) throw new Error('Failed to fetch');
         const data = await res.json();
         entryList.innerHTML = '';
 
@@ -78,6 +83,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         entryList.innerHTML = '<p>Failed to load blacklist.</p>';
     }
 
+    // Submit form
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const entry = {
@@ -88,7 +94,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             added_by: discordID
         };
 
-        console.log('Submitting blacklist entry:', entry);
         try {
             const res = await fetch(`${BASE_URL}/api/blacklist`, {
                 method: 'POST',

@@ -1,127 +1,90 @@
 document.addEventListener('DOMContentLoaded', async () => {
     const entryList = document.getElementById('vehicle-list');
     const form = document.getElementById('vehicle-form');
-    const addedByInput = document.getElementById('added_by');
-    const discordID = localStorage.getItem('userDiscordID');
-    const BASE_URL = 'https://ckrp-backend.onrender.com';
-    let isWhitelisted = false;
+    const usernameInput = document.getElementById('added_by');
+    const reasonInput = document.getElementById('reason');
+    const BASE_URL = 'https://ckrp.example.com/vehicles'; // Replace with your actual backend URL
+    const discordID = localStorage.getItem('userDiscordID') || '';
 
-    // Hide form initially
-    form.style.display = 'none';
+    // Populate the "added_by" field automatically
+    usernameInput.value = discordID;
 
-    const header = document.querySelector('h1');
+    // Helper: create a vehicle list item
+    function createVehicleItem(vehicle) {
+        const li = document.createElement('li');
+        li.dataset.id = vehicle.id;
+        li.textContent = `ID: ${vehicle.id} | Model: ${vehicle.model} | Added by: ${vehicle.username} | Reason: ${vehicle.reason}`;
 
-    // Whitelisted Discord IDs
-    const whitelistIDs = [
-        "329997541523587073", // Doni
-        "1094486136283467847", // Pin
-        "898599688918405181"  // Musc
-    ];
-
-    // Check whitelist
-    if (discordID && whitelistIDs.includes(discordID)) {
-        isWhitelisted = true;
-        addedByInput.value = discordID;
-        form.style.display = 'block';
-        header.innerHTML += ` (Logged in as ${discordID})`;
-    } else {
-        const msg = document.createElement('p');
-        msg.className = 'warning';
-        msg.textContent = discordID
-            ? 'You are not authorized to submit blacklist entries.'
-            : 'Log in to submit blacklist entries.';
-        form.parentElement.insertBefore(msg, form);
-    }
-
-    // Load blacklist entries
-    try {
-        const res = await fetch(`${BASE_URL}/api/blacklist`);
-        if (!res.ok) throw new Error('Failed to fetch blacklist');
-        const data = await res.json();
-        entryList.innerHTML = '';
-
-        if (!Array.isArray(data) || data.length === 0) {
-            entryList.innerHTML = '<p>No players blacklisted yet.</p>';
-        } else {
-            data.forEach((entry, index) => {
-                const div = document.createElement('div');
-                div.className = 'blacklist-entry';
-                if (parseInt(entry.miles) >= 8) div.classList.add('danger-high');
-
-                div.innerHTML = `
-                    <strong>${entry.name}</strong><br>
-                    Danger Level: ${entry.miles}<br>
-                    Reason: ${entry.condition}<br>
-                    Submitted by: ${entry.added_by}<br>
-                    ${entry.image ? `<img src="${entry.image}" alt="${entry.name}">` : ''}
-                `;
-
-                // Add delete button if whitelisted
-                if (isWhitelisted) {
-                    const deleteBtn = document.createElement('button');
-                    deleteBtn.textContent = 'Delete';
-                    deleteBtn.style.marginTop = '8px';
-                    deleteBtn.onclick = async () => {
-                        try {
-                            const delRes = await fetch(`${BASE_URL}/blacklist/${index}?discord_id=${discordID}`, {
-                                method: 'DELETE'
-                            });
-                            const delResult = await delRes.json();
-                            if (delRes.ok) {
-                                alert(delResult.message || 'Deleted');
-                                location.reload();
-                            } else {
-                                alert(JSON.stringify(delResult, null, 2));
-                            }
-                        } catch (err) {
-                            console.error('Delete error:', err);
-                            alert('Failed to delete entry. Check console.');
-                        }
-                    };
-                    div.appendChild(deleteBtn);
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = 'Delete';
+        deleteBtn.style.marginLeft = '10px';
+        deleteBtn.addEventListener('click', async () => {
+            try {
+                const res = await fetch(`${BASE_URL}/${vehicle.id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    li.remove();
+                } else {
+                    alert('Failed to delete vehicle');
                 }
+            } catch (err) {
+                console.error(err);
+                alert('Error deleting vehicle');
+            }
+        });
 
-                entryList.appendChild(div);
-            });
-        }
-    } catch (err) {
-        console.error('Error loading blacklist:', err);
-        entryList.innerHTML = '<p>Failed to load blacklist. Backend might be unreachable.</p>';
+        li.appendChild(deleteBtn);
+        return li;
     }
 
-    // Submit form
+    // Fetch and display vehicles
+    async function loadVehicles() {
+        entryList.innerHTML = '';
+        try {
+            const res = await fetch(BASE_URL);
+            if (!res.ok) throw new Error('Failed to fetch vehicles');
+            const vehicles = await res.json();
+            vehicles.forEach(vehicle => {
+                entryList.appendChild(createVehicleItem(vehicle));
+            });
+        } catch (err) {
+            console.error(err);
+            entryList.textContent = 'Error loading vehicles.';
+        }
+    }
+
+    await loadVehicles();
+
+    // Handle form submission
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const entry = {
-            name: document.getElementById('name').value.trim(),
-            miles: parseInt(document.getElementById('miles').value.trim()),
-            condition: document.getElementById('condition').value.trim(),
-            image: document.getElementById('image').value.trim(),
-            added_by: discordID
+        const data = {
+            username: usernameInput.value.trim(),
+            reason: reasonInput.value.trim(),
+            model: form.model.value.trim()
         };
 
+        if (!data.username || !data.model || !data.reason) {
+            alert('Please fill all fields.');
+            return;
+        }
+
         try {
-            const res = await fetch(`${BASE_URL}/api/blacklist`, {
+            const res = await fetch(BASE_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(entry)
+                body: JSON.stringify(data)
             });
 
-            const result = await res.json();
+            if (!res.ok) throw new Error('Failed to add vehicle');
 
-            if (res.ok) {
-                alert('Player blacklisted successfully!');
-                form.reset();
-                location.reload();
-            } else {
-                // Always stringify objects/arrays to avoid [object Object]
-                alert('Error: ' + JSON.stringify(result, null, 2));
-                console.error(result);
-            }
+            const newVehicle = await res.json();
+            entryList.appendChild(createVehicleItem(newVehicle));
+            form.reset();
+            usernameInput.value = discordID; // Keep the discordID filled
         } catch (err) {
-            console.error('Submission error:', err);
-            alert('Failed to submit blacklist entry. Check console for details.');
+            console.error(err);
+            alert('Error adding vehicle.');
         }
     });
 });

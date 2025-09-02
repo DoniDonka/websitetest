@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const data = await res.json();
         entryList.innerHTML = '';
 
-        if (data.length === 0) {
+        if (!Array.isArray(data) || data.length === 0) {
             entryList.innerHTML = '<p>No players blacklisted yet.</p>';
         } else {
             data.forEach((entry, index) => {
@@ -63,15 +63,19 @@ document.addEventListener('DOMContentLoaded', async () => {
                     deleteBtn.style.marginTop = '8px';
                     deleteBtn.onclick = async () => {
                         try {
-                            const res = await fetch(`${BASE_URL}/blacklist/${index}?discord_id=${discordID}`, {
+                            const delRes = await fetch(`${BASE_URL}/blacklist/${index}?discord_id=${discordID}`, {
                                 method: 'DELETE'
                             });
-                            const result = await res.json();
-                            alert(result.message || 'Deleted');
-                            location.reload();
+                            const delResult = await delRes.json();
+                            if (delRes.ok) {
+                                alert(delResult.message || 'Deleted');
+                                location.reload();
+                            } else {
+                                alert(JSON.stringify(delResult, null, 2));
+                            }
                         } catch (err) {
                             console.error('Delete error:', err);
-                            alert('Failed to delete entry.');
+                            alert('Failed to delete entry. Check console.');
                         }
                     };
                     div.appendChild(deleteBtn);
@@ -82,7 +86,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     } catch (err) {
         console.error('Error loading blacklist:', err);
-        entryList.innerHTML = '<p>Failed to load blacklist.</p>';
+        entryList.innerHTML = '<p>Failed to load blacklist. Backend might be unreachable.</p>';
     }
 
     // Submit form
@@ -103,6 +107,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(entry)
             });
+
             const result = await res.json();
 
             if (res.ok) {
@@ -110,9 +115,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 form.reset();
                 location.reload();
             } else {
-                // Show proper error message
+                // Always stringify objects/arrays to avoid [object Object]
+                alert('Error: ' + JSON.stringify(result, null, 2));
                 console.error(result);
-                alert(result.detail || result.error || JSON.stringify(result, null, 2));
             }
         } catch (err) {
             console.error('Submission error:', err);

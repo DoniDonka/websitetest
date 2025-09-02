@@ -6,15 +6,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     const BASE_URL = 'http://127.0.0.1:8000';
     let isWhitelisted = false;
 
-    // Show logged-in user
     const header = document.querySelector('h1');
     header.innerHTML += discordID ? ` (Logged in as ${discordID})` : '';
 
-    // Whitelist IDs
     const whitelistIDs = [
-        "329997541523587073", // Doni
-        "1094486136283467847", // Pin
-        "898599688918405181"   // Musc
+        "329997541523587073",
+        "1094486136283467847",
+        "898599688918405181"
     ];
 
     if (discordID && whitelistIDs.includes(discordID)) {
@@ -31,7 +29,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         form.parentElement.insertBefore(msg, form);
     }
 
-    // Load blacklist entries
     try {
         const res = await fetch(`${BASE_URL}/api/blacklist`);
         const data = await res.json();
@@ -43,19 +40,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             data.forEach((entry, index) => {
                 const div = document.createElement('div');
                 div.className = 'blacklist-entry';
-                if (parseInt(entry.danger_level) >= 8 || entry.danger_level.toLowerCase() === 'high') {
-                    div.classList.add('danger-high');
-                }
+                if (parseInt(entry.miles) >= 8) div.classList.add('danger-high');
 
                 div.innerHTML = `
-                    <strong>${entry.username}</strong><br>
-                    Danger Level: ${entry.danger_level}<br>
-                    Reason: ${entry.reason}<br>
-                    Submitted by: ${entry.discord_id}<br>
-                    ${entry.image_url ? `<img src="${entry.image_url}" alt="${entry.username}">` : ''}
+                    <strong>${entry.name}</strong><br>
+                    Danger Level: ${entry.miles}<br>
+                    Reason: ${entry.condition}<br>
+                    Submitted by: ${entry.added_by}<br>
+                    ${entry.image ? `<img src="${entry.image}" alt="${entry.name}">` : ''}
                 `;
 
-                // Add delete button if whitelisted
                 if (isWhitelisted) {
                     const deleteBtn = document.createElement('button');
                     deleteBtn.textContent = 'Delete';
@@ -84,20 +78,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         entryList.innerHTML = '<p>Failed to load blacklist.</p>';
     }
 
-    // Submit form
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
-
         const entry = {
-            username: document.getElementById('name').value.trim(),
-            danger_level: document.getElementById('miles').value.trim(),
-            reason: document.getElementById('condition').value.trim(),
-            image_url: document.getElementById('image').value.trim(),
-            discord_id: discordID
+            name: document.getElementById('name').value.trim(),
+            miles: document.getElementById('miles').value.trim(),
+            condition: document.getElementById('condition').value.trim(),
+            image: document.getElementById('image').value.trim(),
+            added_by: discordID
         };
 
         console.log('Submitting blacklist entry:', entry);
-
         try {
             const res = await fetch(`${BASE_URL}/api/blacklist`, {
                 method: 'POST',

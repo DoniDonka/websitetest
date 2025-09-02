@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Check whitelist via backend
     if (discordID) {
         try {
-            const res = await fetch(`${BASE_URL}/is-whitelist/${discordID}`);
+            const res = await fetch(`${BASE_URL}/is-whitelisted/${discordID}`);
             const result = await res.json();
             isWhitelisted = result.allowed;
 

@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const form = document.getElementById('vehicle-form');
     const addedByInput = document.getElementById('added_by');
     const discordID = localStorage.getItem('userDiscordID');
-    const BASE_URL = 'http://127.0.0.1:8000';
+    const BASE_URL = 'https://ckrp-backend.onrender.com';
     let isWhitelisted = false;
 
     // Hide form initially

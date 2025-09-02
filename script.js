@@ -10,32 +10,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     const header = document.querySelector('h1');
     header.innerHTML += discordID ? ` (Logged in as ${discordID})` : '';
 
-    // Check whitelist via backend
-    if (discordID) {
-        try {
-            const res = await fetch(`${BASE_URL}/is-whitelisted/${discordID}`);
-            const result = await res.json();
-            isWhitelisted = result.allowed;
+    // Whitelist IDs
+    const whitelistIDs = [
+        "329997541523587073", // Doni
+        "1094486136283467847", // Pin
+        "898599688918405181"   // Musc
+    ];
 
-            if (isWhitelisted) {
-                addedByInput.value = discordID;
-                form.style.display = 'block';
-            } else {
-                form.style.display = 'none';
-                const msg = document.createElement('p');
-                msg.className = 'warning';
-                msg.textContent = 'You are not authorized to submit blacklist entries.';
-                form.parentElement.insertBefore(msg, form);
-            }
-        } catch (err) {
-            console.error('Whitelist check failed:', err);
-            form.style.display = 'none';
-        }
+    if (discordID && whitelistIDs.includes(discordID)) {
+        isWhitelisted = true;
+        addedByInput.value = discordID;
+        form.style.display = 'block';
     } else {
         form.style.display = 'none';
         const msg = document.createElement('p');
         msg.className = 'warning';
-        msg.textContent = 'Log in to submit blacklist entries.';
+        msg.textContent = discordID
+            ? 'You are not authorized to submit blacklist entries.'
+            : 'Log in to submit blacklist entries.';
         form.parentElement.insertBefore(msg, form);
     }
 
@@ -51,14 +43,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             data.forEach((entry, index) => {
                 const div = document.createElement('div');
                 div.className = 'blacklist-entry';
-                if (entry.miles >= 8) div.classList.add('danger-high');
+                if (parseInt(entry.danger_level) >= 8 || entry.danger_level.toLowerCase() === 'high') {
+                    div.classList.add('danger-high');
+                }
 
                 div.innerHTML = `
-                    <strong>${entry.name}</strong><br>
-                    Danger Level: ${entry.miles}<br>
-                    Reason: ${entry.condition}<br>
-                    Submitted by: ${entry.added_by}<br>
-                    ${entry.image ? `<img src="${entry.image}" alt="${entry.name}">` : ''}
+                    <strong>${entry.username}</strong><br>
+                    Danger Level: ${entry.danger_level}<br>
+                    Reason: ${entry.reason}<br>
+                    Submitted by: ${entry.discord_id}<br>
+                    ${entry.image_url ? `<img src="${entry.image_url}" alt="${entry.username}">` : ''}
                 `;
 
                 // Add delete button if whitelisted
@@ -93,15 +87,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Submit form
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
+
         const entry = {
-            name: document.getElementById('name').value.trim(),
-            miles: parseInt(document.getElementById('miles').value),
-            condition: document.getElementById('condition').value.trim(),
-            image: document.getElementById('image').value.trim(),
-            added_by: discordID
+            username: document.getElementById('name').value.trim(),
+            danger_level: document.getElementById('miles').value.trim(),
+            reason: document.getElementById('condition').value.trim(),
+            image_url: document.getElementById('image').value.trim(),
+            discord_id: discordID
         };
 
         console.log('Submitting blacklist entry:', entry);
+
         try {
             const res = await fetch(`${BASE_URL}/api/blacklist`, {
                 method: 'POST',
@@ -123,4 +119,3 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 });
-

@@ -52,6 +52,80 @@ label {
   margin-top: 10px;
   display: block;
 }
+abody {
+  font-family: Arial, sans-serif;
+  padding: 20px;
+  max-width: 800px;
+  margin: auto;
+  background-color: #121212; /* Dark background */
+  color: #f0f0f0; /* Light text */
+}
+
+h1, h2 {
+  color: #ffffff;
+}
+
+.blacklist-entry {
+  border: 1px solid #333;
+  padding: 12px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  background-color: #1e1e1e; /* Dark matte panel */
+}
+
+/* Highlight high danger level */
+.danger-high {
+  border-left: 5px solid #ff4d4d;
+  background-color: #2c1e1e;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  margin-top: 8px;
+  border-radius: 4px;
+}
+
+input, textarea, button {
+  display: block;
+  margin: 8px 0;
+  padding: 10px;
+  width: 100%;
+  box-sizing: border-box;
+  border-radius: 6px;
+  border: 1px solid #555;
+  background-color: #1e1e1e;
+  color: #f0f0f0;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+label {
+  font-weight: bold;
+  margin-top: 10px;
+  display: block;
+}
+
+.warning {
+  color: #ff4d4d;
+  font-weight: bold;
+  margin: 10px 0;
+}
 
 .warning {
   color: red;

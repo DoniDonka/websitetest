@@ -2,25 +2,35 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Player Blacklist</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <h1>Player Blacklist</h1>
 
-  <div id="vehicle-list">
-    <p>Loading blacklist entries...</p>
-  </div>
+  <!-- Blacklist Form -->
+  <form id="blacklist-form">
+    <label for="username">Username</label>
+    <input type="text" id="username" required>
 
-  <h2>Blacklist a Player</h2>
-  <form id="vehicle-form">
-    <input type="text" id="name" placeholder="Username" required>
-    <input type="text" id="miles" placeholder="Danger Level (1–10 or descriptive)" required>
-    <input type="text" id="condition" placeholder="Reason for Blacklisting" required>
-    <input type="text" id="image" placeholder="Player Image URL">
+    <label for="danger_level">Danger Level (1–10 or description)</label>
+    <input type="text" id="danger_level" required>
+
+    <label for="reason">Reason</label>
+    <input type="text" id="reason" required>
+
+    <label for="image_url">Player Image URL</label>
+    <input type="url" id="image_url">
+
+    <!-- hidden field for Discord ID -->
     <input type="hidden" id="added_by">
+
     <button type="submit">Blacklist Player</button>
   </form>
+
+  <!-- Entries will show up here -->
+  <div id="blacklist-entries"></div>
 
   <script src="script.js"></script>
 </body>

@@ -1,101 +1,125 @@
 document.addEventListener('DOMContentLoaded', async () => {
-    const entryList = document.getElementById('blacklist-list');
+    const entryList = document.getElementById('blacklist-entries');
     const form = document.getElementById('blacklist-form');
-    const usernameInput = document.getElementById('added_by');
-    const targetInput = document.getElementById('target');
-    const reasonInput = document.getElementById('reason');
-    const BASE_URL = 'https://ckrp.example.com/blacklist'; // Update to your backend URL
-    const discordID = localStorage.getItem('userDiscordID') || '';
+    const addedByInput = document.getElementById('added_by');
+    const discordID = localStorage.getItem('userDiscordID');
+    const BASE_URL = 'https://ckrp-backend.onrender.com';
+    let isWhitelisted = false;
 
-    // Auto-fill username field
-    usernameInput.value = discordID;
+    // Hide form initially
+    form.style.display = 'none';
 
-    // Helper: create a blacklist list item
-    function createBlacklistItem(entry) {
-        const li = document.createElement('li');
-        li.dataset.id = entry.id;
-        li.textContent = `Target: ${entry.target} | Added by: ${entry.username} | Reason: ${entry.reason}`;
+    const header = document.querySelector('h1');
 
-        const deleteBtn = document.createElement('button');
-        deleteBtn.textContent = 'Delete';
-        deleteBtn.style.marginLeft = '10px';
-        deleteBtn.addEventListener('click', async () => {
-            try {
-                const res = await fetch(`${BASE_URL}/${entry.id}`, { method: 'DELETE' });
-                if (!res.ok) throw new Error('Failed to delete entry');
-                li.remove();
-            } catch (err) {
-                console.error('Delete error:', err);
-                alert('Error deleting entry.');
-            }
-        });
+    // Whitelisted Discord IDs
+    const whitelistIDs = [
+        "329997541523587073", // Doni
+        "1094486136283467847", // Pin
+        "898599688918405181"  // Musc
+    ];
 
-        li.appendChild(deleteBtn);
-        return li;
+    // Check whitelist
+    if (discordID && whitelistIDs.includes(discordID)) {
+        isWhitelisted = true;
+        addedByInput.value = discordID;
+        form.style.display = 'block';
+        header.innerHTML += ` (Logged in as ${discordID})`;
+    } else {
+        const msg = document.createElement('p');
+        msg.className = 'warning';
+        msg.textContent = discordID
+            ? 'You are not authorized to submit blacklist entries.'
+            : 'Log in to submit blacklist entries.';
+        form.parentElement.insertBefore(msg, form);
     }
 
     // Load blacklist entries
-    async function loadBlacklist() {
-        entryList.innerHTML = '';
+    async function loadEntries() {
+        entryList.innerHTML = '<p>Loading blacklist entries...</p>';
         try {
-            const res = await fetch(BASE_URL);
-            if (!res.ok) throw new Error('Failed to fetch blacklist');
-            const entries = await res.json();
-            entries.forEach(entry => {
-                entryList.appendChild(createBlacklistItem(entry));
-            });
+            const res = await fetch(`${BASE_URL}/api/blacklist`);
+            if (!res.ok) throw new Error(`Failed to fetch: ${res.status}`);
+            const data = await res.json();
+            entryList.innerHTML = '';
+
+            if (data.length === 0) {
+                entryList.innerHTML = '<p>No players blacklisted yet.</p>';
+            } else {
+                data.forEach((entry, index) => {
+                    const div = document.createElement('div');
+                    div.className = 'blacklist-entry';
+                    if (parseInt(entry.danger_level) >= 8) div.classList.add('danger-high');
+
+                    div.innerHTML = `
+                        <strong>${entry.username}</strong><br>
+                        Danger Level: ${entry.danger_level}<br>
+                        Reason: ${entry.reason}<br>
+                        Submitted by: ${entry.added_by}<br>
+                        ${entry.image_url ? `<img src="${entry.image_url}" alt="${entry.username}">` : ''}
+                    `;
+
+                    if (isWhitelisted) {
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.textContent = 'Delete';
+                        deleteBtn.style.marginTop = '8px';
+                        deleteBtn.onclick = async () => {
+                            try {
+                                const res = await fetch(`${BASE_URL}/blacklist/${index}?discord_id=${discordID}`, {
+                                    method: 'DELETE'
+                                });
+                                const result = await res.json();
+                                alert(result.message || 'Deleted');
+                                loadEntries();
+                            } catch (err) {
+                                console.error('Delete error:', err);
+                                alert('Failed to delete entry.');
+                            }
+                        };
+                        div.appendChild(deleteBtn);
+                    }
+
+                    entryList.appendChild(div);
+                });
+            }
         } catch (err) {
-            console.error('Load error:', err);
-            entryList.textContent = 'Error loading blacklist.';
+            console.error('Error loading blacklist:', err);
+            entryList.innerHTML = '<p>Failed to load blacklist.</p>';
         }
     }
 
-    await loadBlacklist();
+    await loadEntries();
 
-    // Handle form submission
+    // Submit form
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const data = {
-            username: usernameInput.value.trim(),
-            target: targetInput.value.trim(),
-            reason: reasonInput.value.trim()
+        const entry = {
+            username: document.getElementById('username').value.trim(),
+            danger_level: document.getElementById('danger_level').value.trim(),
+            reason: document.getElementById('reason').value.trim(),
+            image_url: document.getElementById('image_url').value.trim(),
+            added_by: discordID
         };
 
-        console.log('Submitting:', data);
-
-        if (!data.username || !data.target || !data.reason) {
-            alert('Please fill all fields.');
-            return;
-        }
-
         try {
-            const res = await fetch(BASE_URL, {
+            const res = await fetch(`${BASE_URL}/api/blacklist`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
+                body: JSON.stringify(entry)
             });
+            const result = await res.json();
 
-            let responseData;
-            try {
-                responseData = await res.json();
-            } catch {
-                responseData = {};
+            if (res.ok) {
+                alert('Player blacklisted successfully!');
+                form.reset();
+                loadEntries();
+            } else {
+                console.error('Error response:', result);
+                alert(result.detail || result.error || JSON.stringify(result));
             }
-
-            if (!res.ok || responseData.error || !responseData.id) {
-                console.error('Backend error:', responseData);
-                alert('Failed to submit blacklist entry: ' + (responseData.error || 'Unknown error'));
-                return;
-            }
-
-            entryList.appendChild(createBlacklistItem(responseData));
-            form.reset();
-            usernameInput.value = discordID;
-
         } catch (err) {
-            console.error('Submit error:', err);
-            alert('Error submitting entry.');
+            console.error('Submission error:', err);
+            alert('Failed to submit blacklist entry. Check console for details.');
         }
     });
 });

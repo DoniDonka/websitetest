@@ -1,5 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const BASE_URL = "https://ckrp-backend.onrender.com";
+    // Use /api/blacklist (not just /blacklist)
+    const BASE_URL = "https://ckrp-backend.onrender.com/api/blacklist";
 
     const entryList = document.getElementById("blacklistEntries");
     const form = document.getElementById("blacklistForm");
@@ -9,7 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
         entryList.innerHTML = "<p>Loading blacklist entries...</p>";
 
         try {
-            const response = await fetch(`${BASE_URL}/blacklist`);
+            const response = await fetch(BASE_URL);
             if (!response.ok) throw new Error("Failed to load blacklist");
 
             const data = await response.json();
@@ -53,7 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         try {
-            const response = await fetch(`${BASE_URL}/blacklist`, {
+            const response = await fetch(BASE_URL, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
